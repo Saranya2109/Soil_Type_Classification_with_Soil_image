@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+from flask import jsonify,Flask, Request
+from flask_restful import Api, Resource
+from keras.models import load_model
+import cv2
+from tensorflow.keras.utils import load_img, img_to_array
+
+
+# In[11]:
+
+
+app = Flask(__name__)
+api = Api(app)
+
+model = load_model('soil-model.h5')
+
+
+# In[14]:
+
+
+def predict_soil(path):
+       
+    class_names = ['Black soil',
+              'Cinder soil',
+              'Laterite soil',
+              'Peat soil',
+              'Yellow soil']    
+        
+    im = cv2.imread(path)
+    im_resize = cv2.resize(im, (img_width,img_height), interpolation = cv2.INTER_LINEAR)
+    
+#     image = im_resize.reshape( 1, 150,150,3)
+    
+    
+#     plt.imshow(cv2.cvtColor(im_resize, cv2.COLOR_BGR2RGB))
+#     plt.show()
+    
+    img_pred = load_img(path,target_size = (img_height, img_width))
+    img_pred = img_to_array(img_pred)
+    img = np.expand_dims(img_pred, axis = 3)
+    image = img.reshape( 1, 150,150,3)
+    result = model.predict(image)
+    
+    max_confidence = np.argmax(result[0])
+    
+    print(max_confidence, class_names[max_confidence])
+
+    return np.argmax(result)
+
+
+# In[15]:
+
+
+@app.route('/')
+def index():
+    return "App is working"
+
+
+# In[19]:
+
+
+@app.route('/predict', methods =['POST'])
+def predict_request():
+    # Get file and save it
+    file = request.files['image']
+    filename = secure_filename(file.filename)
+    file.save(filename)
+    # Send prediction request
+    resp = predict_soil(filename)
+    return jsonify({
+        max_confidence, class_names[max_confidence],
+        np.argmax(result)
+    })
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+if __name__ == '__main__':
+    app.run(port = 3000, debug = False)
+
+
+# In[ ]:
+
+
+
+
